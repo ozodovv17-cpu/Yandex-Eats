@@ -17,6 +17,7 @@ from aiogram.types import (
 
 import database as db
 import scheduler
+from duration import parse_duration, format_duration, DURATION_HELP
 
 # Telefon raqami uchun sodda validatsiya: + bilan yoki raqam bilan boshlanadi,
 # 9-15 ta raqamdan iborat bo'lishi kerak
@@ -41,6 +42,7 @@ class AdminForm(StatesGroup):
     waiting_scooter_free = State()
     waiting_scooter_price = State()
     waiting_scooter_edit_value = State()
+    waiting_retry_cooldown = State()
 
 
 def admin_menu_kb() -> InlineKeyboardMarkup:
@@ -50,6 +52,7 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="📍 Lokatsiyani belgilash", callback_data="adm_location")],
             [InlineKeyboardButton(text="🗑 Lokatsiyani o'chirish", callback_data="adm_del_location")],
             [InlineKeyboardButton(text="🕐 Uchrashuv vaqtini belgilash", callback_data="adm_time")],
+            [InlineKeyboardButton(text="⏱ Qayta urinish muddati", callback_data="adm_retry_cooldown")],
             [InlineKeyboardButton(text="📊 Statistika", callback_data="adm_stats_menu")],
             [InlineKeyboardButton(text="📋 Nomzodlar ro'yxati", callback_data="adm_cand_list")],
             [InlineKeyboardButton(text="🛵 Skuterlar (transport)", callback_data="adm_scooters")],
@@ -155,18 +158,22 @@ def scooter_edit_menu_kb(scooter_id: int) -> InlineKeyboardMarkup:
     )
 
 
+ADMIN_DIVIDER = "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+ADMIN_HOME_TEXT = f"🛠 <b>ADMIN PANEL</b>\n{ADMIN_DIVIDER}\n\n<i>Kerakli bo'limni tanlang</i> 👇"
+
+
 @router.message(Command("admin"))
 async def admin_panel(message: Message):
     if not is_admin(message.from_user.id):
         return
-    await message.answer("🛠 Admin panel", reply_markup=admin_menu_kb())
+    await message.answer(ADMIN_HOME_TEXT, reply_markup=admin_menu_kb())
 
 
 @router.callback_query(F.data == "adm_back")
 async def adm_back(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    await call.message.edit_text("🛠 Admin panel", reply_markup=admin_menu_kb())
+    await call.message.edit_text(ADMIN_HOME_TEXT, reply_markup=admin_menu_kb())
     await call.answer()
 
 
@@ -174,7 +181,12 @@ async def adm_back(call: CallbackQuery):
 async def adm_phone(call: CallbackQuery, state: FSMContext):
     if not is_admin(call.from_user.id):
         return
-    await call.message.answer("Yangi aloqa raqamini yuboring (masalan: +998901234567):")
+    current = db.get_setting("contact_phone") or "—"
+    await call.message.answer(
+        f"📞 <b>Aloqa raqamini o'zgartirish</b>\n{ADMIN_DIVIDER}\n\n"
+        f"Joriy raqam: <b>{current}</b>\n\n"
+        "Yangi raqamni yuboring (masalan: +998901234567):"
+    )
     await state.set_state(AdminForm.waiting_phone)
     await call.answer()
 
@@ -189,7 +201,7 @@ async def adm_phone_save(message: Message, state: FSMContext):
         )
         return  # holat o'zgarmaydi, qayta so'raladi
     db.set_setting("contact_phone", text)
-    await message.answer("✅ Aloqa raqami yangilandi.")
+    await message.answer(f"✅ Aloqa raqami yangilandi: <b>{text}</b>")
     await state.clear()
 
 
@@ -198,7 +210,8 @@ async def adm_location(call: CallbackQuery, state: FSMContext):
     if not is_admin(call.from_user.id):
         return
     await call.message.answer(
-        "Ofis lokatsiyasini yuboring (📎 -> Location orqali) yoki manzil matnini yozing:"
+        f"📍 <b>Lokatsiyani belgilash</b>\n{ADMIN_DIVIDER}\n\n"
+        "Ofis lokatsiyasini yuboring (📎 → Location orqali) yoki manzil matnini yozing:"
     )
     await state.set_state(AdminForm.waiting_location)
     await call.answer()
@@ -219,13 +232,13 @@ async def adm_location_save_text(message: Message, state: FSMContext):
     if len(text) < 5:
         await message.answer(
             "❗️ Manzil juda qisqa yoki bo'sh. Iltimos, to'liqroq manzil matnini yozing "
-            "yoki 📎 -> Location orqali geo-lokatsiya yuboring:"
+            "yoki 📎 → Location orqali geo-lokatsiya yuboring:"
         )
         return  # holat o'zgarmaydi, qayta so'raladi
     db.set_setting("location_address", text)
     db.delete_setting("location_lat")
     db.delete_setting("location_lon")
-    await message.answer("✅ Manzil (matn) saqlandi.")
+    await message.answer("✅ Manzil saqlandi.")
     await state.clear()
 
 
@@ -244,7 +257,12 @@ async def adm_del_location(call: CallbackQuery):
 async def adm_time(call: CallbackQuery, state: FSMContext):
     if not is_admin(call.from_user.id):
         return
-    await call.message.answer("Uchrashuv vaqtini yuboring (masalan: ertaga soat 11:00):")
+    current = db.get_setting("meeting_time") or "—"
+    await call.message.answer(
+        f"🕐 <b>Uchrashuv vaqtini belgilash</b>\n{ADMIN_DIVIDER}\n\n"
+        f"Joriy vaqt: <b>{current}</b>\n\n"
+        "Yangi uchrashuv vaqtini yuboring (masalan: ertaga soat 11:00):"
+    )
     await state.set_state(AdminForm.waiting_meeting_time)
     await call.answer()
 
@@ -256,7 +274,37 @@ async def adm_time_save(message: Message, state: FSMContext):
         await message.answer("❗️ Bo'sh matn yuborildi. Iltimos, uchrashuv vaqtini matn ko'rinishida yozing:")
         return  # holat o'zgarmaydi, qayta so'raladi
     db.set_setting("meeting_time", text)
-    await message.answer("✅ Uchrashuv vaqti yangilandi.")
+    await message.answer(f"✅ Uchrashuv vaqti yangilandi: <b>{text}</b>")
+    await state.clear()
+
+
+@router.callback_query(F.data == "adm_retry_cooldown")
+async def adm_retry_cooldown(call: CallbackQuery, state: FSMContext):
+    if not is_admin(call.from_user.id):
+        return
+    current_seconds = db.get_reject_retry_seconds()
+    await call.message.answer(
+        f"⏱ <b>Qayta urinish muddati</b>\n{ADMIN_DIVIDER}\n\n"
+        f"Rad etilgan nomzod qayta ariza topshira olmaydigan muddat.\n\n"
+        f"Joriy qiymat: <b>{format_duration(current_seconds)}</b>\n\n"
+        f"Yangi muddatni yuboring (1 soniyadan 1 yilgacha).\n{DURATION_HELP}"
+    )
+    await state.set_state(AdminForm.waiting_retry_cooldown)
+    await call.answer()
+
+
+@router.message(AdminForm.waiting_retry_cooldown)
+async def adm_retry_cooldown_save(message: Message, state: FSMContext):
+    text = (message.text or "").strip()
+    seconds = parse_duration(text)
+    if seconds is None:
+        await message.answer(
+            "❗️ Format noto'g'ri yoki 1 soniya — 1 yil oralig'idan tashqarida.\n\n"
+            f"{DURATION_HELP}"
+        )
+        return  # holat o'zgarmaydi, qayta so'raladi
+    db.set_reject_retry_seconds(seconds)
+    await message.answer(f"✅ Qayta urinish muddati yangilandi: <b>{format_duration(seconds)}</b>")
     await state.clear()
 
 
@@ -264,7 +312,10 @@ async def adm_time_save(message: Message, state: FSMContext):
 async def adm_stats_menu(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    await call.message.edit_text("📊 Statistika bo'limi", reply_markup=stats_menu_kb())
+    await call.message.edit_text(
+        f"📊 <b>STATISTIKA</b>\n{ADMIN_DIVIDER}\n\n<i>Kerakli davrni tanlang</i> 👇",
+        reply_markup=stats_menu_kb(),
+    )
     await call.answer()
 
 
@@ -279,9 +330,9 @@ async def adm_stats_today(call: CallbackQuery):
     started_yday, passed_yday = db.get_stats_for_date(yesterday.isoformat())
 
     text = (
-        "📊 Bugun/Kecha statistikasi\n\n"
-        f"Bugun: {started_today} ta odam botga kirdi, {passed_today} tasi sinovdan o'tdi\n"
-        f"Kecha: {started_yday} ta odam kirgan edi, {passed_yday} tasi o'tgan edi"
+        f"📅 <b>Bugun / Kecha</b>\n{ADMIN_DIVIDER}\n\n"
+        f"<b>Bugun:</b> {started_today} ta kirdi, {passed_today} tasi o'tdi ✅\n"
+        f"<b>Kecha:</b> {started_yday} ta kirgan edi, {passed_yday} tasi o'tgan edi ✅"
     )
     await call.message.answer(text)
     await call.answer()
@@ -295,10 +346,10 @@ async def adm_stats_week(call: CallbackQuery):
     start = today - timedelta(days=today.weekday())  # shu haftaning dushanbasi
     started, passed, rejected = db.get_stats_range(start.isoformat(), today.isoformat())
     text = (
-        f"🗓 Shu hafta statistikasi ({start.isoformat()} — {today.isoformat()})\n\n"
-        f"Botga kirganlar: {started}\n"
-        f"Sinovdan o'tganlar: {passed}\n"
-        f"Rad etilganlar: {rejected}"
+        f"🗓 <b>Shu hafta</b> <i>({start.isoformat()} — {today.isoformat()})</i>\n{ADMIN_DIVIDER}\n\n"
+        f"👥 <b>Botga kirganlar:</b> {started}\n"
+        f"✅ <b>Sinovdan o'tganlar:</b> {passed}\n"
+        f"❌ <b>Rad etilganlar:</b> {rejected}"
     )
     await call.message.answer(text)
     await call.answer()
@@ -312,10 +363,10 @@ async def adm_stats_month(call: CallbackQuery):
     start = today.replace(day=1)
     started, passed, rejected = db.get_stats_range(start.isoformat(), today.isoformat())
     text = (
-        f"🗓 Shu oy statistikasi ({start.isoformat()} — {today.isoformat()})\n\n"
-        f"Botga kirganlar: {started}\n"
-        f"Sinovdan o'tganlar: {passed}\n"
-        f"Rad etilganlar: {rejected}"
+        f"🗓 <b>Shu oy</b> <i>({start.isoformat()} — {today.isoformat()})</i>\n{ADMIN_DIVIDER}\n\n"
+        f"👥 <b>Botga kirganlar:</b> {started}\n"
+        f"✅ <b>Sinovdan o'tganlar:</b> {passed}\n"
+        f"❌ <b>Rad etilganlar:</b> {rejected}"
     )
     await call.message.answer(text)
     await call.answer()
@@ -331,10 +382,10 @@ async def adm_stats_rejects(call: CallbackQuery):
         await call.answer()
         return
 
-    lines = ["🚫 Rad etilganlar soni (bosqichlar bo'yicha):\n"]
+    lines = [f"🚫 <b>Rad etilganlar</b> <i>(bosqichlar bo'yicha)</i>\n{ADMIN_DIVIDER}\n"]
     for step, count in sorted(reject_stats.items(), key=lambda x: -x[1]):
         label = db.REJECT_STEP_LABELS.get(step, step)
-        lines.append(f"• {label}: {count} ta")
+        lines.append(f"▪️ {label}: <b>{count}</b> ta")
     await call.message.answer("\n".join(lines))
     await call.answer()
 
@@ -353,7 +404,8 @@ async def adm_stats_csv(call: CallbackQuery, bot: Bot):
     writer = csv.writer(buffer)
     writer.writerow(
         ["id", "tg_id", "username", "full_name", "phone", "age", "lang", "passport_ok",
-         "in_tashkent", "experience", "transport", "status", "reject_step", "created_date"]
+         "in_tashkent", "experience", "transport", "status", "reject_step", "created_date",
+         "wants_scooter", "scooter_requested_at"]
     )
     for row in rows:
         writer.writerow([row[key] for key in row.keys()])
@@ -375,15 +427,15 @@ async def adm_stats_send_report(call: CallbackQuery, bot: Bot):
 
 # ---------------- Adminlarni boshqarish ----------------
 
+ADMINS_LIST_TEXT = f"👤 <b>ADMINLAR RO'YXATI</b>\n{ADMIN_DIVIDER}\n<i>⭐️ — super-admin (o'chirib bo'lmaydi)</i>"
+
+
 @router.callback_query(F.data == "adm_admins")
 async def adm_admins(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
     admins = db.list_admins()
-    await call.message.edit_text(
-        "👤 Adminlar ro'yxati:\n⭐️ — super-admin (o'chirib bo'lmaydi)",
-        reply_markup=admins_menu_kb(admins),
-    )
+    await call.message.edit_text(ADMINS_LIST_TEXT, reply_markup=admins_menu_kb(admins))
     await call.answer()
 
 
@@ -397,9 +449,10 @@ async def adm_add_admin(call: CallbackQuery, state: FSMContext):
     if not is_admin(call.from_user.id):
         return
     await call.message.answer(
+        f"➕ <b>Yangi admin qo'shish</b>\n{ADMIN_DIVIDER}\n\n"
         "Yangi adminning Telegram ID raqamini yuboring.\n\n"
-        "ID ni bilish uchun o'sha kishi @userinfobot ga /start bossin, "
-        "yoki o'sha kishidan istalgan xabarini shu yerga forward qiling."
+        "<i>ID ni bilish uchun o'sha kishi @userinfobot ga /start bossin, "
+        "yoki o'sha kishidan istalgan xabarini shu yerga forward qiling.</i>"
     )
     await state.set_state(AdminForm.waiting_new_admin)
     await call.answer()
@@ -429,13 +482,13 @@ async def adm_add_admin_save(message: Message, state: FSMContext):
 
     added = db.add_admin(new_id, new_username, added_by=message.from_user.id)
     if added:
-        await message.answer(f"✅ Yangi admin qo'shildi: {new_id}")
+        await message.answer(f"✅ Yangi admin qo'shildi: <b>{new_id}</b>")
     else:
         await message.answer("⚠️ Bu foydalanuvchi allaqachon admin.")
 
     await state.clear()
     admins = db.list_admins()
-    await message.answer("👤 Adminlar ro'yxati:", reply_markup=admins_menu_kb(admins))
+    await message.answer(ADMINS_LIST_TEXT, reply_markup=admins_menu_kb(admins))
 
 
 @router.callback_query(F.data.startswith("adm_rm_"))
@@ -450,10 +503,7 @@ async def adm_remove_admin(call: CallbackQuery):
         await call.answer("Super-adminni o'chirib bo'lmaydi ❌", show_alert=True)
 
     admins = db.list_admins()
-    await call.message.edit_text(
-        "👤 Adminlar ro'yxati:\n⭐️ — super-admin (o'chirib bo'lmaydi)",
-        reply_markup=admins_menu_kb(admins),
-    )
+    await call.message.edit_text(ADMINS_LIST_TEXT, reply_markup=admins_menu_kb(admins))
 
 
 # ---------------- Nomzodlar ro'yxati (bot ichida) ----------------
@@ -462,14 +512,15 @@ async def show_candidates_page(call: CallbackQuery, offset: int):
     total = db.get_candidates_count()
     rows = db.get_candidates_page(offset, CANDIDATES_PAGE_SIZE)
 
+    header = f"📋 <b>NOMZODLAR RO'YXATI</b>\n{ADMIN_DIVIDER}\n\n"
     if total == 0:
-        text = "📋 Hozircha hech qanday nomzod yo'q."
+        text = header + "<i>Hozircha hech qanday nomzod yo'q.</i>"
     elif not rows:
-        text = "📋 Bu sahifada nomzod yo'q."
+        text = header + "<i>Bu sahifada nomzod yo'q.</i>"
     else:
         start_n = offset + 1
         end_n = offset + len(rows)
-        text = f"📋 Nomzodlar ro'yxati ({start_n}-{end_n} / {total} ta):"
+        text = header + f"<b>{start_n}-{end_n}</b> / {total} ta"
 
     await call.message.edit_text(text, reply_markup=candidates_list_kb(rows, offset, total))
 
@@ -504,22 +555,26 @@ async def adm_cand_detail(call: CallbackQuery):
     username_str = f"@{c['username']}" if c["username"] else "—"
     lang_label = "🇺🇿 UZ" if c["lang"] == "uz" else "🇷🇺 RU"
     status_label = STATUS_LABELS.get(c["status"], c["status"])
+    status_icon = STATUS_ICONS.get(c["status"], "❔")
 
     lines = [
-        f"👤 Ism: {c['full_name'] or '—'} ({username_str})",
-        f"🌐 Til: {lang_label}",
-        f"📞 Telefon: {c['phone'] or '—'}",
-        f"🎂 Yosh: {c['age'] if c['age'] is not None else '—'}",
-        f"🪪 Pasport nusxasi: {c['passport_ok'] or '—'}",
-        f"🏙 Toshkentda: {c['in_tashkent'] or '—'}",
-        f"💼 Tajriba: {c['experience'] or '—'}",
-        f"🚗 Transport: {c['transport'] or '—'}",
-        f"📅 Murojaat sanasi: {c['created_date']}",
-        f"📌 Holat: {status_label}",
+        f"👤 <b>{c['full_name'] or '—'}</b> ({username_str})",
+        ADMIN_DIVIDER,
+        f"🌐 <b>Til:</b> {lang_label}",
+        f"📞 <b>Telefon:</b> {c['phone'] or '—'}",
+        f"🎂 <b>Yosh:</b> {c['age'] if c['age'] is not None else '—'}",
+        f"🪪 <b>Pasport nusxasi:</b> {c['passport_ok'] or '—'}",
+        f"🏙 <b>Toshkentda:</b> {c['in_tashkent'] or '—'}",
+        f"💼 <b>Tajriba:</b> {c['experience'] or '—'}",
+        f"🚗 <b>Transport:</b> {c['transport'] or '—'}",
+        f"📅 <b>Murojaat sanasi:</b> {c['created_date']}",
+        f"📌 <b>Holat:</b> {status_icon} {status_label}",
     ]
     if c["status"] == "rejected" and c["reject_step"]:
         label = db.REJECT_STEP_LABELS.get(c["reject_step"], c["reject_step"])
-        lines.append(f"🚫 Rad sababi: {label}")
+        lines.append(f"🚫 <b>Rad sababi:</b> {label}")
+    if c["wants_scooter"]:
+        lines.append(f"🛴 <b>Skuter so'rovi:</b> {c['wants_scooter']} ({c['scooter_requested_at'] or '—'})")
 
     text = "\n".join(lines)
     kb = InlineKeyboardMarkup(
@@ -535,9 +590,10 @@ async def adm_cand_detail(call: CallbackQuery):
 
 def scooter_caption(s) -> str:
     return (
-        f"🛵 {s['name']}\n"
-        f"⏳ Bepul muddat: {s['free_period']}\n"
-        f"💵 Narxi: {s['price']}"
+        f"🛵 <b>{s['name']}</b>\n"
+        f"{ADMIN_DIVIDER}\n"
+        f"⏳ <b>Bepul muddat:</b> {s['free_period']}\n"
+        f"💵 <b>Narxi:</b> {s['price']}"
     )
 
 
@@ -546,12 +602,12 @@ async def adm_scooters(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
     scooters = db.list_scooters()
+    header = f"🛵 <b>SKUTERLAR</b> <i>(transport bo'limi)</i>\n{ADMIN_DIVIDER}\n\n"
     text = (
-        "🛵 Skuterlar ro'yxati (transport bo'limi)\n\n"
-        "Bu yerga qo'shilgan skuterlar testdan o'tgan nomzodlarga lokatsiyadan keyin "
-        "avtomatik ko'rsatiladi."
+        header + "Bu yerga qo'shilgan skuterlar testdan o'tgan nomzodlarga "
+        "lokatsiyadan keyin avtomatik ko'rsatiladi."
         if scooters
-        else "🛵 Hozircha skuter qo'shilmagan.\n\n"
+        else header + "<i>Hozircha skuter qo'shilmagan.</i>\n\n"
         "Qo'shilgan skuterlar testdan o'tgan nomzodlarga lokatsiyadan keyin ko'rsatiladi."
     )
     await call.message.edit_text(text, reply_markup=scooters_menu_kb(scooters))
@@ -579,8 +635,9 @@ async def adm_scooter_add(call: CallbackQuery, state: FSMContext):
     if not is_admin(call.from_user.id):
         return
     await call.message.answer(
+        f"➕ <b>Yangi skuter qo'shish</b>\n{ADMIN_DIVIDER}\n\n"
         "📸 Skuterning rasmini yuboring.\n\n"
-        "Agar rasm bo'lmasa, shunchaki \"-\" deb yozing — rasmsiz ham qo'shish mumkin."
+        "<i>Agar rasm bo'lmasa, shunchaki \"-\" deb yozing — rasmsiz ham qo'shish mumkin.</i>"
     )
     await state.set_state(AdminForm.waiting_scooter_photo)
     await call.answer()
@@ -654,7 +711,7 @@ async def adm_scooter_price(message: Message, state: FSMContext):
         await message.answer(f"✅ Skuter qo'shildi!\n\n{scooter_caption(s)}")
 
     scooters = db.list_scooters()
-    await message.answer("🛵 Skuterlar ro'yxati:", reply_markup=scooters_menu_kb(scooters))
+    await message.answer(f"🛵 <b>SKUTERLAR</b>\n{ADMIN_DIVIDER}", reply_markup=scooters_menu_kb(scooters))
 
 
 @router.callback_query(F.data.startswith("adm_scooter_del_"))
@@ -667,9 +724,9 @@ async def adm_scooter_del(call: CallbackQuery):
 
     scooters = db.list_scooters()
     text = (
-        "🛵 Skuterlar ro'yxati (transport bo'limi)"
+        f"🛵 <b>SKUTERLAR</b> <i>(transport bo'limi)</i>\n{ADMIN_DIVIDER}"
         if scooters
-        else "🛵 Hozircha skuter qo'shilmagan."
+        else f"🛵 <b>SKUTERLAR</b>\n{ADMIN_DIVIDER}\n\n<i>Hozircha skuter qo'shilmagan.</i>"
     )
     await call.message.edit_text(text, reply_markup=scooters_menu_kb(scooters))
 
@@ -748,7 +805,7 @@ async def adm_scooter_edit_photo(message: Message, state: FSMContext):
     s = db.get_scooter(scooter_id)
     await message.answer_photo(photo_file_id, caption=f"✅ Rasm yangilandi!\n\n{scooter_caption(s)}")
     scooters = db.list_scooters()
-    await message.answer("🛵 Skuterlar ro'yxati:", reply_markup=scooters_menu_kb(scooters))
+    await message.answer(f"🛵 <b>SKUTERLAR</b>\n{ADMIN_DIVIDER}", reply_markup=scooters_menu_kb(scooters))
 
 
 @router.message(AdminForm.waiting_scooter_edit_value)
@@ -783,7 +840,7 @@ async def adm_scooter_edit_value(message: Message, state: FSMContext):
         else:
             await message.answer(scooter_caption(s))
     scooters = db.list_scooters()
-    await message.answer("🛵 Skuterlar ro'yxati:", reply_markup=scooters_menu_kb(scooters))
+    await message.answer(f"🛵 <b>SKUTERLAR</b>\n{ADMIN_DIVIDER}", reply_markup=scooters_menu_kb(scooters))
 
 
 # ---------------- Stiker ID olish yordamchisi ----------------

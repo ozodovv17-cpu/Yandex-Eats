@@ -33,7 +33,7 @@ def init_db():
         """
     )
     # Eski bazalarda bo'lmagan ustunlar uchun migratsiya
-    for column_def in ("age INTEGER", "lang TEXT DEFAULT 'uz'"):
+    for column_def in ("age INTEGER", "lang TEXT DEFAULT 'uz'", "wants_scooter TEXT", "scooter_requested_at TEXT", "status_updated_at TEXT"):
         try:
             cur.execute(f"ALTER TABLE candidates ADD COLUMN {column_def}")
         except sqlite3.OperationalError:
@@ -118,6 +118,19 @@ def get_candidate(candidate_id: int):
     return row
 
 
+def get_latest_candidate_by_tg(tg_id: int):
+    """Berilgan Telegram foydalanuvchisining eng oxirgi (so'nggi) arizasini qaytaradi."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT * FROM candidates WHERE tg_id = ? ORDER BY id DESC LIMIT 1",
+        (tg_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+
 def get_candidates_count(status: str = None) -> int:
     conn = get_conn()
     cur = conn.cursor()
@@ -178,6 +191,24 @@ def delete_setting(key: str):
     cur.execute("DELETE FROM settings WHERE key = ?", (key,))
     conn.commit()
     conn.close()
+
+
+# Rad etilgan nomzod qayta ariza topshira olmaydigan muddat (soniyalarda).
+# Standart bo'yicha 30 kun (admin panel orqali 1 soniyadan 1 yilgacha o'zgartirish mumkin).
+REJECT_RETRY_SECONDS_KEY = "reject_retry_seconds"
+DEFAULT_REJECT_RETRY_SECONDS = 30 * 86400
+
+
+def get_reject_retry_seconds() -> int:
+    value = get_setting(REJECT_RETRY_SECONDS_KEY, str(DEFAULT_REJECT_RETRY_SECONDS))
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_REJECT_RETRY_SECONDS
+
+
+def set_reject_retry_seconds(seconds: int):
+    set_setting(REJECT_RETRY_SECONDS_KEY, str(int(seconds)))
 
 
 # ---------- Adminlar ----------

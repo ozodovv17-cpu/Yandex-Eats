@@ -1,82 +1,154 @@
+DIVIDER = "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+
 TEXTS = {
     "uz": {
         "intro": (
-            "👋 Assalomu alaykum!\n\n"
-            "🛵 Sizni <b>Yandex Eats</b> kuryerlik lavozimiga ishga taklif qilamiz!\n\n"
-            "💰 Hamma to'lovlar biz tarafdan amalga oshiriladi.\n"
-            "🪪 Sizdan faqat pasportingizning <b>asli</b> bo'lishi kerak.\n\n"
-            "📝 Quyida qisqa anketa qoldiring — biz siz bilan albatta aloqaga chiqamiz!"
+            "🛵 <b>YANDEX EATS</b>\n"
+            f"{DIVIDER}\n\n"
+            "Assalomu alaykum! 👋\n\n"
+            "Sizni jamoamizda <b>kuryer</b> sifatida ko'rishdan mamnunmiz.\n\n"
+            "💰 <b>Barcha to'lovlar</b> — kompaniya tomonidan\n"
+            "🪪 <b>Talab qilinadi</b> — faqat pasportingizning asli\n\n"
+            f"{DIVIDER}\n"
+            "<i>Quyida bir necha oddiy savolga javob bering — "
+            "biz siz bilan tez orada bog'lanamiz ✅</i>"
         ),
-        "choose_language": "Tilni tanlang / Выберите язык:",
+        "choose_language": "🌐 Tilni tanlang / Выберите язык",
         "greeting": (
-            "Assalomu alaykum! Yandex Eats kuryer lavozimiga xush kelibsiz.\n\n"
-            "Iltimos, telefon raqamingizni pastdagi tugma orqali yuboring 👇"
+            "🎉 <b>Xush kelibsiz!</b>\n\n"
+            "Yandex Eats kuryer lavozimiga ariza jarayonini boshlaymiz.\n\n"
+            "📱 Iltimos, telefon raqamingizni pastdagi tugma orqali yuboring 👇"
         ),
         "share_phone_button": "📱 Raqamni ulashish",
-        "phone_not_shared": "Iltimos, pastdagi '📱 Raqamni ulashish' tugmasini bosing.",
-        "thanks_phone": "Rahmat! ✅",
-        "ask_age_confirm": "Siz 18 yoshga to'lganmisiz?",
-        "ask_age_number": "Necha yoshdasiz? Iltimos, raqam bilan yozing (masalan: 23):",
+        "phone_not_shared": "🔔 Iltimos, pastdagi <b>«📱 Raqamni ulashish»</b> tugmasini bosing.",
+        "thanks_phone": "✅ <b>Rahmat!</b> Raqamingiz qabul qilindi.",
+        "ask_age_confirm": "🎂 Siz <b>18 yoshga</b> to'lganmisiz?",
+        "ask_age_number": "🎂 Necha yoshdasiz?\n<i>Iltimos, raqam bilan yozing (masalan: 23)</i>",
         "age_not_digit": "❗️ Iltimos, faqat raqam kiriting (masalan: 23):",
         "age_out_of_range": "❗️ Iltimos, haqiqiy yoshingizni raqam bilan kiriting:",
-        "ask_passport": "Pasportingizning nusxasi (skan/rasm) bormi?",
-        "ask_tashkent": "Siz hozirda Toshkentdamisiz?",
-        "ask_experience": "Siz oldin kuryerlik bilan shug'ullanganmisiz?",
-        "ask_transport": "Sizda shaxsiy transportingiz bormi?",
-        "reject": "😔 Afsuski, siz hozircha kuryer lavozimiga to'g'ri kelmaysiz.",
-        "congrats": (
-            "🎉 Tabriklaymiz! Siz kuryerlik testidan muvaffaqiyatli o'tdingiz.\n\n"
-            "🕐 Uchrashuv vaqti: {meeting_time}\n"
-            "📞 Bog'lanish uchun raqam: {contact_phone}"
+        "ask_passport": "🪪 Pasportingizning nusxasi (skan/rasm) bormi?",
+        "ask_tashkent": "🏙 Siz hozirda <b>Toshkentda</b>misiz?",
+        "ask_experience": "💼 Siz oldin kuryerlik bilan shug'ullanganmisiz?",
+        "ask_transport": "🚗 Sizda shaxsiy transportingiz bormi?",
+        "reject": (
+            "🙏 <b>E'tiboringiz uchun rahmat!</b>\n\n"
+            "Afsuski, hozirgi mezonlarga ko'ra siz kuryer lavozimiga "
+            "to'g'ri kelmaysiz.\n\n"
+            "<i>Kelajakda boshqa imkoniyatlar paydo bo'lganda albatta xabar beramiz.</i> ✨"
         ),
-        "office_location": "📍 Ofisimiz manzili:",
-        "scooters_intro": "🛵 Bizda quyidagi transport (skuter) takliflari mavjud:",
-        "scooter_free_label": "Bepul muddat",
-        "scooter_price_label": "Narxi",
+        "congrats": (
+            "🎉 <b>TABRIKLAYMIZ!</b>\n"
+            f"{DIVIDER}\n\n"
+            "Siz kuryerlik so'rovnomasidan <b>muvaffaqiyatli</b> o'tdingiz! 🥳\n\n"
+            "🕐 <b>Uchrashuv vaqti:</b> {meeting_time}\n"
+            "📞 <b>Bog'lanish uchun raqam:</b> {contact_phone}\n\n"
+            f"{DIVIDER}\n"
+            "<i>Uchrashuvga pasportingizning aslini olib kelishni unutmang 🪪</i>"
+        ),
+        "office_location": "📍 <b>Ofisimiz manzili:</b>",
+        "scooters_intro": (
+            "🛵 <b>Transport takliflari</b>\n"
+            f"{DIVIDER}\n\n"
+            "Bizda quyidagi qulay transport (skuter) takliflari mavjud.\n"
+            "<i>Batafsil ma'lumot olish uchun kerakli modelni tanlang</i> 👇"
+        ),
+        "scooter_free_label": "⏳ Bepul muddat",
+        "scooter_price_label": "💵 Narxi",
         "want_scooter_button": "🛒 Shu skuterni olmoqchiman",
         "scooter_chosen_toast": "✅ So'rovingiz qabul qilindi!",
         "scooter_chosen_confirm": (
-            "✅ Siz \"{scooter_name}\" skuterini tanladingiz.\n"
-            "Tez orada operatorlarimiz siz bilan bog'lanishadi."
+            "✅ <b>So'rovingiz qabul qilindi!</b>\n\n"
+            "Siz «<b>{scooter_name}</b>» skuterini tanladingiz.\n"
+            "<i>Tez orada operatorlarimiz siz bilan bog'lanishadi</i> 📞"
         ),
         "yes": "✅ Ha",
         "no": "❌ Yo'q",
+        "already_passed_title": (
+            "✅ <b>Siz sinovdan allaqachon o'tgansiz!</b>\n"
+            f"{DIVIDER}\n\n"
+            "<i>Kerakli bo'limni tanlang</i> 👇"
+        ),
+        "menu_location_button": "📍 Ofis manzili",
+        "menu_contact_button": "📞 Aloqa raqami",
+        "menu_time_button": "🕐 Uchrashuv vaqti",
+        "menu_scooters_button": "🛵 Transport takliflari",
+        "menu_no_location": "📍 Ofis manzili hali belgilanmagan.",
+        "menu_contact_value": "📞 <b>Bog'lanish uchun raqam:</b> {contact_phone}",
+        "menu_time_value": "🕐 <b>Uchrashuv vaqti:</b> {meeting_time}",
+        "menu_no_scooters": "🛵 Hozircha transport takliflari yo'q.",
+        "reject_cooldown": (
+            "😔 <b>Siz hozircha sinovdan o'ta olmagansiz.</b>\n\n"
+            "🕐 Qayta urinib ko'rish uchun <b>{retry_at}</b> dan keyin /start bosing."
+        ),
     },
     "ru": {
-        "choose_language": "Tilni tanlang / Выберите язык:",
+        "choose_language": "🌐 Tilni tanlang / Выберите язык",
         "greeting": (
-            "Здравствуйте! Добро пожаловать на позицию курьера Yandex Eats.\n\n"
-            "Пожалуйста, отправьте свой номер телефона с помощью кнопки ниже 👇"
+            "🎉 <b>Добро пожаловать!</b>\n\n"
+            "Начинаем процесс подачи заявки на позицию курьера Yandex Eats.\n\n"
+            "📱 Пожалуйста, отправьте свой номер телефона с помощью кнопки ниже 👇"
         ),
         "share_phone_button": "📱 Поделиться номером",
-        "phone_not_shared": "Пожалуйста, нажмите кнопку '📱 Поделиться номером' ниже.",
-        "thanks_phone": "Спасибо! ✅",
-        "ask_age_confirm": "Вам исполнилось 18 лет?",
-        "ask_age_number": "Сколько вам лет? Пожалуйста, напишите цифрами (например: 23):",
+        "phone_not_shared": "🔔 Пожалуйста, нажмите кнопку <b>«📱 Поделиться номером»</b> ниже.",
+        "thanks_phone": "✅ <b>Спасибо!</b> Ваш номер принят.",
+        "ask_age_confirm": "🎂 Вам исполнилось <b>18 лет</b>?",
+        "ask_age_number": "🎂 Сколько вам лет?\n<i>Пожалуйста, напишите цифрами (например: 23)</i>",
         "age_not_digit": "❗️ Пожалуйста, введите только цифры (например: 23):",
         "age_out_of_range": "❗️ Пожалуйста, введите свой настоящий возраст цифрами:",
-        "ask_passport": "Есть ли у вас копия паспорта (скан/фото)?",
-        "ask_tashkent": "Вы сейчас находитесь в Ташкенте?",
-        "ask_experience": "Вы раньше занимались курьерской доставкой?",
-        "ask_transport": "У вас есть личный транспорт?",
-        "reject": "😔 К сожалению, вы пока не подходите на должность курьера.",
-        "congrats": (
-            "🎉 Поздравляем! Вы успешно прошли тест на курьера.\n\n"
-            "🕐 Время встречи: {meeting_time}\n"
-            "📞 Номер для связи: {contact_phone}"
+        "ask_passport": "🪪 Есть ли у вас копия паспорта (скан/фото)?",
+        "ask_tashkent": "🏙 Вы сейчас находитесь в <b>Ташкенте</b>?",
+        "ask_experience": "💼 Вы раньше занимались курьерской доставкой?",
+        "ask_transport": "🚗 У вас есть личный транспорт?",
+        "reject": (
+            "🙏 <b>Спасибо за уделённое время!</b>\n\n"
+            "К сожалению, по текущим критериям вы пока не подходите "
+            "на должность курьера.\n\n"
+            "<i>Обязательно сообщим вам, если появятся другие возможности.</i> ✨"
         ),
-        "office_location": "📍 Адрес нашего офиса:",
-        "scooters_intro": "🛵 У нас есть следующие варианты транспорта (скутеров):",
-        "scooter_free_label": "Бесплатный период",
-        "scooter_price_label": "Цена",
+        "congrats": (
+            "🎉 <b>ПОЗДРАВЛЯЕМ!</b>\n"
+            f"{DIVIDER}\n\n"
+            "Вы <b>успешно</b> прошли анкету на курьера! 🥳\n\n"
+            "🕐 <b>Время встречи:</b> {meeting_time}\n"
+            "📞 <b>Номер для связи:</b> {contact_phone}\n\n"
+            f"{DIVIDER}\n"
+            "<i>Не забудьте взять с собой оригинал паспорта 🪪</i>"
+        ),
+        "office_location": "📍 <b>Адрес нашего офиса:</b>",
+        "scooters_intro": (
+            "🛵 <b>Варианты транспорта</b>\n"
+            f"{DIVIDER}\n\n"
+            "У нас есть следующие удобные варианты транспорта (скутеров).\n"
+            "<i>Выберите модель, чтобы увидеть подробности</i> 👇"
+        ),
+        "scooter_free_label": "⏳ Бесплатный период",
+        "scooter_price_label": "💵 Цена",
         "want_scooter_button": "🛒 Хочу этот скутер",
         "scooter_chosen_toast": "✅ Ваш запрос принят!",
         "scooter_chosen_confirm": (
-            "✅ Вы выбрали скутер \"{scooter_name}\".\n"
-            "В ближайшее время наш оператор свяжется с вами."
+            "✅ <b>Ваш запрос принят!</b>\n\n"
+            "Вы выбрали скутер «<b>{scooter_name}</b>».\n"
+            "<i>В ближайшее время наш оператор свяжется с вами</i> 📞"
         ),
         "yes": "✅ Да",
         "no": "❌ Нет",
+        "already_passed_title": (
+            "✅ <b>Вы уже прошли отбор!</b>\n"
+            f"{DIVIDER}\n\n"
+            "<i>Выберите нужный раздел</i> 👇"
+        ),
+        "menu_location_button": "📍 Адрес офиса",
+        "menu_contact_button": "📞 Номер для связи",
+        "menu_time_button": "🕐 Время встречи",
+        "menu_scooters_button": "🛵 Варианты транспорта",
+        "menu_no_location": "📍 Адрес офиса пока не указан.",
+        "menu_contact_value": "📞 <b>Номер для связи:</b> {contact_phone}",
+        "menu_time_value": "🕐 <b>Время встречи:</b> {meeting_time}",
+        "menu_no_scooters": "🛵 Пока нет вариантов транспорта.",
+        "reject_cooldown": (
+            "😔 <b>К сожалению, вы пока не прошли отбор.</b>\n\n"
+            "🕐 Чтобы попробовать снова, нажмите /start после <b>{retry_at}</b>."
+        ),
     },
 }
 

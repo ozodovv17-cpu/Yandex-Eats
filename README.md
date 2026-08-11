@@ -4,9 +4,11 @@
 
 ### -2. Skuterlarni tahrirlash + "Shu skuterni olmoqchiman" tugmasi + kunlik hisobot
 
-**Skuterlarni tahrirlash**: admin panelda har bir skuter yonida endi "✏️ Tahrirlash" tugmasi bor — nomi, rasmi, bepul muddati yoki narxini alohida-alohida o'zgartirish mumkin (avval o'chirib qayta qo'shish shart emas edi).
+**Transport bo'limi endi menyu ko'rinishida**: savol-javobdan o'tib, ofis lokatsiyasi yuborilgandan keyin, agar skuterlar qo'shilgan bo'lsa — barcha skuter nomlari tugmalar ro'yxati (menyu) sifatida chiqadi. Nomzod kerakli modelni bossa, o'sha skuterning to'liq ma'lumoti (rasm, bepul muddat, narx) alohida xabar sifatida ko'rsatiladi — istalgan modelni istalgancha marta ko'rish mumkin.
 
-**"🛒 Shu skuterni olmoqchiman" tugmasi**: testdan o'tgan nomzodga ko'rsatilgan har bir skuter ostida endi tugma bor. Nomzod bossa:
+**Skuterlarni tahrirlash**: admin panelda har bir skuter yonida endi "✏️ Tahrirlash" tugmasi bor — nomi, rasmi, bepul muddati yoki narxini alohida-alohida o'zgartirish mumkin (avval o'chirib qayta qo'shish shart edi).
+
+**"🛒 Shu skuterni olmoqchiman" tugmasi**: skuter ma'lumoti ko'rsatilganda, uning ostida tugma bor. Nomzod bossa:
 - Nomzodga tasdiqlash xabari chiqadi ("operatorlarimiz bog'lanadi")
 - Adminlarga darhol xabar boradi: kim, qaysi skuterni tanladi, telefon raqami bilan
 
