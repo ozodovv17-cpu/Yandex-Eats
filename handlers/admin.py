@@ -563,7 +563,7 @@ async def adm_cand_detail(call: CallbackQuery):
         f"🌐 <b>Til:</b> {lang_label}",
         f"📞 <b>Telefon:</b> {c['phone'] or '—'}",
         f"🎂 <b>Yosh:</b> {c['age'] if c['age'] is not None else '—'}",
-        f"🪪 <b>Pasport nusxasi:</b> {c['passport_ok'] or '—'}",
+        f"🪪 <b>Pasport asli:</b> {c['passport_ok'] or '—'}",
         f"🏙 <b>Toshkentda:</b> {c['in_tashkent'] or '—'}",
         f"💼 <b>Tajriba:</b> {c['experience'] or '—'}",
         f"🚗 <b>Transport:</b> {c['transport'] or '—'}",

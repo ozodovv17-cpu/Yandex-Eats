@@ -310,7 +310,7 @@ def get_stats_range(start_iso: str, end_iso: str):
 REJECT_STEP_LABELS = {
     "yosh": "18 yoshdan kichik (tasdiqlashda Yo'q bosdi)",
     "yosh_raqam": "Yoshi 18 dan kichik (aniq yoshni kiritganda)",
-    "pasport": "Pasport nusxasi yo'q",
+    "pasport": "Pasport asli yo'q",
     "toshkent": "Toshkentda emas",
 }
 

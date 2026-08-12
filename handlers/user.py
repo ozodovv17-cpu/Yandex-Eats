@@ -56,7 +56,7 @@ def yes_no_kb(prefix: str, lang: str) -> InlineKeyboardMarkup:
 
 REJECT_STEP_LABELS = {
     "yosh": "18 yoshdan kichik",
-    "pasport": "Pasport nusxasi yo'q",
+    "pasport": "Pasport asli yo'q",
     "toshkent": "Toshkentda emas",
 }
 
@@ -414,7 +414,7 @@ async def transport_answer(call: CallbackQuery, state: FSMContext, bot: Bot):
         f"👤 <b>Ism:</b> {candidate['full_name']} {username_str}\n"
         f"🌐 <b>Til:</b> {lang_label}\n"
         f"📞 <b>Telefon:</b> {candidate['phone']}\n"
-        f"🪪 <b>Pasport nusxasi:</b> {candidate['passport_ok']}\n"
+        f"🪪 <b>Pasport asli:</b> {candidate['passport_ok']}\n"
         f"🏙 <b>Toshkentda:</b> {candidate['in_tashkent']}\n"
         f"💼 <b>Tajriba bormi:</b> {candidate['experience']}\n"
         f"🚗 <b>Transport bormi:</b> {candidate['transport']}"
