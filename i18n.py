@@ -80,6 +80,14 @@ TEXTS = {
             "😔 <b>Siz hozircha sinovdan o'ta olmagansiz.</b>\n\n"
             "🕐 Qayta urinib ko'rish uchun <b>{retry_at}</b> dan keyin /start bosing."
         ),
+        "force_sub_text": (
+            "🔔 <b>Botdan foydalanish uchun quyidagi kanal/guruhlarga obuna bo'ling</b>\n"
+            f"{DIVIDER}\n\n"
+            "Obuna bo'lgach, pastdagi <b>«✅ Tekshirish»</b> tugmasini bosing 👇"
+        ),
+        "check_subscription_button": "✅ Tekshirish",
+        "force_sub_still_missing": "❗️ Siz hali barcha kanal/guruhlarga obuna bo'lmagansiz. Obuna bo'lib, qayta tekshiring.",
+        "force_sub_success": "✅ Rahmat! Endi botdan foydalanish uchun /start tugmasini bosing.",
     },
     "ru": {
         "choose_language": "🌐 Tilni tanlang / Выберите язык",
@@ -149,6 +157,14 @@ TEXTS = {
             "😔 <b>К сожалению, вы пока не прошли отбор.</b>\n\n"
             "🕐 Чтобы попробовать снова, нажмите /start после <b>{retry_at}</b>."
         ),
+        "force_sub_text": (
+            "🔔 <b>Для использования бота подпишитесь на следующие каналы/группы</b>\n"
+            f"{DIVIDER}\n\n"
+            "После подписки нажмите кнопку <b>«✅ Проверить»</b> ниже 👇"
+        ),
+        "check_subscription_button": "✅ Проверить",
+        "force_sub_still_missing": "❗️ Вы ещё не подписались на все каналы/группы. Подпишитесь и проверьте снова.",
+        "force_sub_success": "✅ Спасибо! Теперь нажмите /start, чтобы начать пользоваться ботом.",
     },
 }
 

@@ -14,6 +14,7 @@ from aiogram.types import (
     CallbackQuery,
     BufferedInputFile,
 )
+from aiogram.exceptions import TelegramAPIError
 
 import database as db
 import scheduler
@@ -43,6 +44,7 @@ class AdminForm(StatesGroup):
     waiting_scooter_price = State()
     waiting_scooter_edit_value = State()
     waiting_retry_cooldown = State()
+    waiting_force_sub_input = State()
 
 
 def admin_menu_kb() -> InlineKeyboardMarkup:
@@ -56,6 +58,7 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="📊 Statistika", callback_data="adm_stats_menu")],
             [InlineKeyboardButton(text="📋 Nomzodlar ro'yxati", callback_data="adm_cand_list")],
             [InlineKeyboardButton(text="🛵 Skuterlar (transport)", callback_data="adm_scooters")],
+            [InlineKeyboardButton(text="📢 Majburiy obuna", callback_data="adm_force_sub")],
             [InlineKeyboardButton(text="👤 Adminlar", callback_data="adm_admins")],
         ]
     )
@@ -142,6 +145,20 @@ def scooters_menu_kb(scooters) -> InlineKeyboardMarkup:
             ]
         )
     rows.append([InlineKeyboardButton(text="➕ Skuter qo'shish", callback_data="adm_scooter_add")])
+    rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data="adm_back")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def force_sub_menu_kb(channels) -> InlineKeyboardMarkup:
+    rows = []
+    for ch in channels:
+        rows.append(
+            [
+                InlineKeyboardButton(text=f"📢 {ch['title']}", callback_data=f"noop_{ch['id']}"),
+                InlineKeyboardButton(text="❌ O'chirish", callback_data=f"adm_force_sub_del_{ch['id']}"),
+            ]
+        )
+    rows.append([InlineKeyboardButton(text="➕ Kanal/guruh qo'shish", callback_data="adm_force_sub_add")])
     rows.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data="adm_back")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -306,6 +323,126 @@ async def adm_retry_cooldown_save(message: Message, state: FSMContext):
     db.set_reject_retry_seconds(seconds)
     await message.answer(f"✅ Qayta urinish muddati yangilandi: <b>{format_duration(seconds)}</b>")
     await state.clear()
+
+
+@router.callback_query(F.data == "adm_force_sub")
+async def adm_force_sub(call: CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+    channels = db.list_forced_channels()
+    text = (
+        f"📢 <b>MAJBURIY OBUNA</b>\n{ADMIN_DIVIDER}\n\n"
+        "Bu yerda qo'shilgan kanal/guruhlarga obuna bo'lmagan foydalanuvchilar "
+        "botdan foydalana olmaydi.\n\n"
+        "<i>Kerakli amalni tanlang</i> 👇"
+        if channels
+        else (
+            f"📢 <b>MAJBURIY OBUNA</b>\n{ADMIN_DIVIDER}\n\n"
+            "Hozircha kanal/guruh qo'shilmagan - majburiy obuna o'chirilgan holatda.\n\n"
+            "<i>Qo'shish uchun pastdagi tugmani bosing</i> 👇"
+        )
+    )
+    await call.message.edit_text(text, reply_markup=force_sub_menu_kb(channels))
+    await call.answer()
+
+
+@router.callback_query(F.data == "adm_force_sub_add")
+async def adm_force_sub_add(call: CallbackQuery, state: FSMContext):
+    if not is_admin(call.from_user.id):
+        return
+    await call.message.answer(
+        f"➕ <b>Kanal/guruh qo'shish</b>\n{ADMIN_DIVIDER}\n\n"
+        "Kanal yoki guruhning <b>@username</b>'ini (masalan: @mychannel) "
+        "yoki <b>ID raqamini</b> (masalan: -1001234567890) yuboring.\n\n"
+        "❗️ <b>Muhim:</b>\n"
+        "1️⃣ Botni o'sha kanal/guruhga <b>admin</b> qilib qo'shing "
+        "(obunani tekshirish uchun shart).\n"
+        "2️⃣ Yopiq (username'i yo'q) kanal/guruh uchun ID raqamini bilish uchun "
+        "o'sha yerdan biror xabarni @userinfobot yoki @getidsbot ga forward qiling."
+    )
+    await state.set_state(AdminForm.waiting_force_sub_input)
+    await call.answer()
+
+
+@router.message(AdminForm.waiting_force_sub_input)
+async def adm_force_sub_save(message: Message, state: FSMContext, bot: Bot):
+    raw = (message.text or "").strip()
+    if not raw:
+        await message.answer("❗️ Iltimos, kanal/guruhning @username'ini yoki ID raqamini yuboring:")
+        return  # holat o'zgarmaydi, qayta so'raladi
+
+    # https://t.me/username yoki t.me/username ko'rinishida yuborilsa - tozalab olamiz
+    cleaned = raw.replace("https://t.me/", "").replace("http://t.me/", "").replace("t.me/", "").strip()
+
+    if re.match(r"^-?\d+$", cleaned):
+        chat_ref = int(cleaned)
+    else:
+        chat_ref = cleaned if cleaned.startswith("@") else f"@{cleaned}"
+
+    try:
+        chat = await bot.get_chat(chat_ref)
+    except TelegramAPIError:
+        await message.answer(
+            "❗️ Kanal/guruh topilmadi. @username yoki ID raqami to'g'ri ekanini tekshiring "
+            "va botni o'sha joyga <b>admin</b> qilib qo'shganingizga ishonch hosil qiling. "
+            "Qayta urinib ko'ring:"
+        )
+        return  # holat o'zgarmaydi, qayta so'raladi
+
+    try:
+        bot_member = await bot.get_chat_member(chat.id, bot.id)
+        if bot_member.status not in ("administrator", "creator"):
+            raise TelegramAPIError(method=None, message="bot not admin")
+    except TelegramAPIError:
+        await message.answer(
+            f"❗️ Bot «{chat.title or chat_ref}» kanal/guruhida <b>admin</b> emas. "
+            "Iltimos, botni o'sha yerga admin qilib qo'shing va shu xabarni qayta yuboring:"
+        )
+        return  # holat o'zgarmaydi, qayta so'raladi
+
+    existing = db.get_forced_channel_by_chat_id(str(chat.id))
+    if existing:
+        await message.answer("❗️ Bu kanal/guruh ro'yxatda allaqachon mavjud.")
+        await state.clear()
+        channels = db.list_forced_channels()
+        await message.answer(f"📢 <b>MAJBURIY OBUNA</b>\n{ADMIN_DIVIDER}", reply_markup=force_sub_menu_kb(channels))
+        return
+
+    invite_link = None
+    if chat.username:
+        invite_link = f"https://t.me/{chat.username}"
+    else:
+        try:
+            invite_link = await bot.export_chat_invite_link(chat.id)
+        except TelegramAPIError:
+            invite_link = None  # link olinmadi - baribir qo'shamiz, tugma ko'rsatilmasligi mumkin
+
+    title = chat.title or chat.username or str(chat.id)
+    db.add_forced_channel(chat_id=str(chat.id), title=title, invite_link=invite_link)
+    await state.clear()
+
+    warn = "" if invite_link else "\n\n⚠️ Havola avtomatik olinmadi - foydalanuvchilarga kanal nomi ko'rinadi, lekin tugma ishlamasligi mumkin."
+    await message.answer(f"✅ Qo'shildi: <b>{title}</b>{warn}")
+
+    channels = db.list_forced_channels()
+    await message.answer(f"📢 <b>MAJBURIY OBUNA</b>\n{ADMIN_DIVIDER}", reply_markup=force_sub_menu_kb(channels))
+
+
+@router.callback_query(F.data.startswith("adm_force_sub_del_"))
+async def adm_force_sub_del(call: CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+    channel_id = int(call.data.replace("adm_force_sub_del_", ""))
+    db.delete_forced_channel(channel_id)
+    await call.answer("🗑 O'chirildi")
+
+    channels = db.list_forced_channels()
+    text = (
+        f"📢 <b>MAJBURIY OBUNA</b>\n{ADMIN_DIVIDER}"
+        if channels
+        else f"📢 <b>MAJBURIY OBUNA</b>\n{ADMIN_DIVIDER}\n\n<i>Hozircha kanal/guruh qo'shilmagan.</i>"
+    )
+    await call.message.edit_text(text, reply_markup=force_sub_menu_kb(channels))
 
 
 @router.callback_query(F.data == "adm_stats_menu")

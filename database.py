@@ -69,6 +69,17 @@ def init_db():
         )
         """
     )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS forced_channels (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id TEXT,
+            title TEXT,
+            invite_link TEXT,
+            created_at TEXT
+        )
+        """
+    )
     conn.commit()
 
     # config.py dagi ADMIN_IDS - dasturning "super-admin"lari, birinchi ishga
@@ -400,5 +411,55 @@ def delete_scooter(scooter_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("DELETE FROM scooters WHERE id = ?", (scooter_id,))
+    conn.commit()
+    conn.close()
+
+
+# ---------- Majburiy obuna (kanal/guruh) ----------
+
+def add_forced_channel(chat_id: str, title: str, invite_link: str = None) -> int:
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO forced_channels (chat_id, title, invite_link, created_at) VALUES (?, ?, ?, ?)",
+        (str(chat_id), title, invite_link, date.today().isoformat()),
+    )
+    conn.commit()
+    new_id = cur.lastrowid
+    conn.close()
+    return new_id
+
+
+def list_forced_channels():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM forced_channels ORDER BY id ASC")
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+def get_forced_channel(channel_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM forced_channels WHERE id = ?", (channel_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+
+def get_forced_channel_by_chat_id(chat_id: str):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM forced_channels WHERE chat_id = ?", (str(chat_id),))
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+
+def delete_forced_channel(channel_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM forced_channels WHERE id = ?", (channel_id,))
     conn.commit()
     conn.close()

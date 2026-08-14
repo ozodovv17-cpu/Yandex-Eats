@@ -8,6 +8,7 @@ from aiogram.enums import ParseMode
 from config import BOT_TOKEN, ADMIN_IDS, DAILY_REPORT_ENABLED
 import database as db
 import scheduler
+import force_sub
 from handlers import user, admin
 
 
@@ -39,6 +40,13 @@ async def main():
 
     # Admin routerni birinchi ulaymiz, chunki /admin komandasi ustuvor bo'lishi kerak
     dp.include_router(admin.router)
+    # Majburiy obuna routeri: "✅ Tekshirish" tugmasini middleware'siz qabul qiladi
+    dp.include_router(force_sub.router)
+
+    # Majburiy obuna middleware'ini faqat oddiy foydalanuvchi routeriga ulaymiz -
+    # shunda admin foydalanuvchilar va /admin panel har doim erkin ishlaydi
+    user.router.message.outer_middleware(force_sub.ForceSubMiddleware())
+    user.router.callback_query.outer_middleware(force_sub.ForceSubMiddleware())
     dp.include_router(user.router)
 
     if DAILY_REPORT_ENABLED:
